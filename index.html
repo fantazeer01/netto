@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ваш налоговый доход выше суммы перечислений на 20–30%. Нетто показывает разрыв, чистую прибыль по каждому артикулу и дату, когда вы перейдёте порог НДС 20 млн ₽. Считает у вас на компьютере.">
+<title>Нетто — сколько на самом деле остаётся с каждого артикула</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --paper:#F4F5F7; --surface:#FFFFFF; --surface-2:#EDEFF3;
+    --ink:#14161A; --ink-2:#5A616E; --ink-3:#878F9E;
+    --line:#DFE2E8; --line-strong:#C4C9D2;
+    --mark:#F5C542; --mark-soft:rgba(245,197,66,.42);
+    --loss:#B3261E; --gain:#1E6F50;
+    --shadow:0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+    --display:"Bitter",Georgia,"Times New Roman",serif;
+    --body:"Golos Text","Helvetica Neue",Arial,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",Consolas,monospace;
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1014; --surface:#171A20; --surface-2:#1E222A;
+      --ink:#E7E9ED; --ink-2:#9AA2B1; --ink-3:#767E8C;
+      --line:#262B34; --line-strong:#39404C;
+      --mark:#C9A227; --mark-soft:rgba(201,162,39,.30);
+      --loss:#FF8A7A; --gain:#5FD3A3;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1014; --surface:#171A20; --surface-2:#1E222A;
+    --ink:#E7E9ED; --ink-2:#9AA2B1; --ink-3:#767E8C;
+    --line:#262B34; --line-strong:#39404C;
+    --mark:#C9A227; --mark-soft:rgba(201,162,39,.30);
+    --loss:#FF8A7A; --gain:#5FD3A3;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px}
+  section{padding:64px 0; border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h1,h2,h3{font-family:var(--display); font-weight:700; text-wrap:balance; margin:0}
+  h1{font-size:clamp(2.1rem,5.2vw,3.4rem); line-height:1.08; letter-spacing:-.015em}
+  h2{font-size:clamp(1.5rem,3.2vw,2.05rem); line-height:1.18; letter-spacing:-.01em}
+  h3{font-size:1.08rem; font-weight:500}
+  p{margin:0; max-width:var(--measure)}
+  .stack{display:flex; flex-direction:column; gap:20px}
+  .stack-sm{display:flex; flex-direction:column; gap:12px}
+  .eyebrow{
+    font-family:var(--mono); font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .lead{font-size:1.16rem; color:var(--ink-2)}
+  .mark{background:linear-gradient(to bottom,transparent 58%,var(--mark-soft) 58%); padding:0 .1em}
+  .num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .loss{color:var(--loss)} .gain{color:var(--gain)}
+  a{color:inherit}
+
+  /* header */
+  .masthead{padding:36px 0 8px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+  .logo{font-family:var(--display); font-weight:700; font-size:1.3rem; letter-spacing:-.02em}
+  .badge{
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
+    border:1px solid var(--line-strong); border-radius:2px; padding:3px 8px; color:var(--ink-2);
+  }
+
+  /* hero report */
+  .report{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .report-head{
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:12px 18px; border-bottom:1px solid var(--line); background:var(--surface-2);
+    font-family:var(--mono); font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2);
+  }
+  .scroller{overflow-x:auto}
+  table{border-collapse:collapse; width:100%; min-width:620px; font-size:.92rem}
+  th,td{padding:11px 18px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{
+    font-family:var(--mono); font-weight:600; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  tbody td{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  tbody td:first-child{font-family:var(--body)}
+  tbody tr:last-child td{border-bottom:0}
+  .row-loss td:first-child::before{
+    content:""; display:inline-block; width:3px; height:1em; background:var(--loss);
+    margin-right:9px; vertical-align:-.13em; border-radius:1px;
+  }
+  .report-foot{
+    padding:12px 18px; border-top:1px solid var(--line-strong); background:var(--surface-2);
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:.82rem;
+  }
+  .fade{opacity:0; animation:in .5s ease forwards}
+  @keyframes in{to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none; opacity:1}}
+
+  /* generic blocks */
+  .cols{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px}
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    padding:22px; box-shadow:var(--shadow);
+  }
+  .card p{color:var(--ink-2); font-size:.95rem}
+  .rule-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+  .rule-list li{
+    display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:baseline;
+    padding:14px 0; border-bottom:1px solid var(--line); max-width:var(--measure);
+  }
+  .rule-list li:last-child{border-bottom:0}
+  .rule-list b{font-family:var(--mono); font-size:.8rem; color:var(--ink-3); font-weight:600}
+
+  /* pricing */
+  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; align-items:start}
+  .plan{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    padding:24px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--shadow);
+  }
+  .plan.featured{border-color:var(--mark); border-width:2px}
+  .plan .price{font-family:var(--display); font-size:1.9rem; font-weight:700; letter-spacing:-.02em}
+  .plan ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; font-size:.93rem; color:var(--ink-2)}
+  .plan li{display:grid; grid-template-columns:14px 1fr; gap:10px}
+  .plan li::before{content:"—"; color:var(--ink-3); font-family:var(--mono)}
+  .btn{
+    display:block; text-align:center; text-decoration:none; font-weight:600; font-size:.95rem;
+    padding:12px 18px; border-radius:3px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover{opacity:.88} .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+  a:focus-visible,.btn:focus-visible{outline:2px solid var(--mark); outline-offset:3px}
+
+  details{border-bottom:1px solid var(--line); padding:16px 0; max-width:var(--measure)}
+  details summary{cursor:pointer; font-weight:500; list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+ "; font-family:var(--mono); color:var(--ink-3)}
+  details[open] summary::before{content:"– "}
+  details p{margin-top:10px; color:var(--ink-2); font-size:.95rem}
+
+  .note{
+    font-size:.86rem; color:var(--ink-3); max-width:var(--measure);
+    border-left:2px solid var(--line-strong); padding-left:14px;
+  }
+  .contact{font-family:var(--mono); font-size:1.15rem}
+  .contact a{text-decoration:none; background:linear-gradient(to bottom,transparent 58%,var(--mark-soft) 58%); padding:2px .15em}
+  .contact a:hover{background:var(--mark-soft)}
+  footer{padding:40px 0 64px; border-top:1px solid var(--line); color:var(--ink-3); font-size:.86rem}
+  footer p{max-width:var(--measure)}
+</style>
+
+<style>
+  .gap-tab{width:100%;min-width:400px;border-collapse:collapse;font-family:var(--mono);font-size:.92rem;margin:18px 0 6px}
+  .gap-tab td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  .gap-tab td:first-child{text-align:left;font-family:var(--body);color:var(--ink-2)}
+  .gap-tab tr:last-child td{border-bottom:0;font-weight:600}
+  .gap-tab .hi{color:var(--loss);font-weight:600}
+  .beta{border:1px solid var(--line-strong);border-left:3px solid var(--mark);border-radius:4px;background:var(--surface);padding:18px 20px;margin:22px 0}
+  .beta b{color:var(--ink)}
+  .qa{border-top:1px solid var(--line);padding:18px 0}
+  .qa h3{font-family:var(--display);font-size:1rem;margin:0 0 6px}
+  .qa p{color:var(--ink-2);font-size:.94rem;max-width:var(--measure)}
+  .src{font-size:.82rem;color:var(--ink-3)}
+  .src a{color:inherit}
+  @media (min-width:780px){ #how .cols{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="logo">Нетто</span>
+    <span class="badge">бета · август 2026</span>
+  </header>
+
+  <section class="stack">
+    <p class="eyebrow">Wildberries и Ozon · УСН · 2026</p>
+    <h1>Вы считаете оборот по перечислениям.<br>ФНС считает <span class="mark">по цене продажи</span>.</h1>
+    <p class="lead">Маркетплейс работает по агентской схеме. Доходом для УСН признаётся вся сумма,
+      которую заплатил покупатель, — а не то, что дошло до вашего счёта. Комиссия площадки
+      это расход, а не уменьшение дохода.</p>
+    <p class="lead">Разница обычно 20–30%. Значит порог НДС в 20 млн ₽ наступает
+      заметно раньше, чем показывает ваш личный кабинет.</p>
+
+    <div class="scroller"><table class="gap-tab">
+      <tr><td>Заплатили покупатели за квартал</td><td>2 356 021 ₽</td></tr>
+      <tr><td>Пришло на счёт от маркетплейса</td><td>1 755 333 ₽</td></tr>
+      <tr><td>Разрыв, который видит только налоговая</td><td class="hi">600 688 ₽ · 25,5%</td></tr>
+      <tr><td>Годовой темп по налоговому доходу</td><td>9,4 млн ₽ вместо 7,0 млн ₽</td></tr>
+    </table></div>
+    <p class="note">Пример на демонстрационных данных из комплекта. Ваши цифры «Нетто» посчитает
+      по вашему отчёту, у вас на компьютере.</p>
+
+    <p><a class="btn" href="#beta">Получить доступ к бете</a>
+       <a class="btn ghost" href="#how">Как это работает</a></p>
+  </section>
+
+  <section class="stack" id="how">
+    <h2>Что «Нетто» делает с вашим отчётом</h2>
+
+    <div class="cols">
+      <div class="card stack-sm">
+        <h3>Разделяет доход и выплату</h3>
+        <p>Показывает обе величины рядом: сколько заплатили покупатели и сколько дошло до счёта.
+          Первая — ваш налоговый доход, вторая — то, чем вы привыкли мерить бизнес.</p>
+      </div>
+      <div class="card stack-sm">
+        <h3>Считает прибыль по каждому артикулу</h3>
+        <p>Выплата минус логистика, хранение, приёмка, штрафы, эквайринг, реклама, ваша
+          себестоимость и НДС. Отсортировано от худшего. Флаг «убыточен три месяца подряд»
+          отличает систему от случайной недели.</p>
+      </div>
+      <div class="card stack-sm">
+        <h3>Показывает дату порога НДС</h3>
+        <p>По помесячной динамике считает, когда доход пересечёт 20 млн ₽ и с какого месяца
+          возникнет обязанность. Плюс сравнение режимов — освобождение, 5%, 7%, 22% с вычетами —
+          на ваших же цифрах.</p>
+      </div>
+      <div class="card stack-sm">
+        <h3>Предлагает посчитанные решения</h3>
+        <p>По каждому убыточному артикулу: до какой цены поднять, сколько вернётся при выводе
+          из ассортимента, что даст смена логистики. С честной оговоркой к каждому сценарию.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Пятнадцать минут от файла до решения</h2>
+    <ul class="rule-list">
+      <li><b>Открыть файл.</b> Один html, двойной клик, открывается в браузере. Интернет не нужен.</li>
+      <li><b>Перетащить отчёт.</b> Выгрузка из личного кабинета WB или Ozon как есть, без переделки.
+        Колонки определяются сами, при желании правятся вручную.</li>
+      <li><b>Вписать себестоимость.</b> Хотя бы для десяти самых продаваемых артикулов.
+        Сохранится в браузере и подставится в следующий раз.</li>
+      <li><b>Прочитать результат.</b> Разрыв, таблица по артикулам, порог НДС, что делать.
+        Выгрузка в Excel на четыре листа — бухгалтеру или партнёру.</li>
+    </ul>
+  </section>
+
+  <section class="stack">
+    <h2>Почему файл, а не сервис</h2>
+    <p class="lead">Чтобы посчитать прибыль, нужны ваши финансовые данные. Отдавать их
+      незнакомому продавцу — плохая идея, и я не стал бы этого делать на вашем месте.</p>
+    <p class="lead">Поэтому «Нетто» — один файл, который считает у вас на компьютере.
+      В нём нет ни одного сетевого запроса: ни аналитики, ни телеметрии, ни отправки данных.
+      Проверяется за минуту — отключите интернет и загрузите отчёт, всё посчитается.</p>
+    <p class="note">Себестоимость хранится в локальном хранилище вашего браузера.
+      Она не уходит никуда и остаётся у вас, даже если мой сайт завтра исчезнет.</p>
+  </section>
+
+  <section class="stack">
+    <h2>Тарифы</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>Старт</h3>
+        <p class="price num">4 900 ₽</p>
+        <ul>
+          <li>Прибыль по артикулам, все удержания</li>
+          <li>Разрыв дохода и выплаты</li>
+          <li>Сценарии «что делать»</li>
+          <li>Выгрузка в Excel</li>
+          <li>Один бизнес, один человек</li>
+        </ul>
+      </div>
+      <div class="plan featured">
+        <h3>Про</h3>
+        <p class="price num">12 900 ₽</p>
+        <ul>
+          <li>Всё из «Старта»</li>
+          <li>Модуль НДС-2026: сравнение режимов</li>
+          <li>Прогноз даты перехода порога</li>
+          <li>Минимальная цена артикула при новой ставке</li>
+          <li>До трёх ИП или юрлиц</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <h3>Агентский</h3>
+        <p class="price num">29 900 ₽</p>
+        <ul>
+          <li>Всё из «Про»</li>
+          <li>Работа с отчётами клиентов</li>
+          <li>Передача результатов клиенту</li>
+          <li>Для агентств и бухгалтеров</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Обновления 12 месяцев включены. После — файл продолжает работать,
+      платным будет только доступ к новым версиям. Возврат 14 дней без объяснения причин.</p>
+  </section>
+
+  <section class="stack" id="beta">
+    <h2>Сейчас идёт бета, и мне нужны не деньги</h2>
+    <div class="beta">
+      <p><b>Продукт готов и считает.</b> Но я собрал его на отчётах, воссозданных по официальной
+        документации Wildberries и Ozon, а не на живых выгрузках. Прежде чем брать за него деньги,
+        я хочу сверить расчёт на настоящих файлах.</p>
+      <p style="margin-top:10px">Поэтому предложение простое и без подвоха:</p>
+      <ul class="rule-list" style="margin-top:10px">
+        <li><b>Вы получаете полную версию бесплатно и навсегда.</b> Тариф «Про», без ограничений
+          по сроку. Никакой подписки и никакой карты.</li>
+        <li><b>Взамен прошу две вещи.</b> Обезличенный отчёт — товары можно заменить на
+          «Товар 1», артикулы на «SKU-1», важны только заголовки колонок. И пятнадцать минут,
+          чтобы сказать, где расчёт разошёлся с вашим пониманием.</li>
+      </ul>
+      <p style="margin-top:12px">Если после этого продукт окажется бесполезным — так и скажите,
+        это тоже ответ. Файл всё равно останется у вас.</p>
+    </div>
+    <p class="contact">Пишите: <a href="mailto:petrov@getfrontfix.com?subject=%D0%9D%D0%B5%D1%82%D1%82%D0%BE%20%E2%80%94%20%D0%B1%D0%B5%D1%82%D0%B0">petrov@getfrontfix.com</a></p>
+    <p class="note">Отвечает Платон Петров — я собрал «Нетто» и я же читаю почту.
+      Адрес на домене моего второго проекта: отдельный домен под «Нетто» куплю,
+      когда станет понятно, что он нужен. Пока честнее так, чем безымянный ящик.</p>
+  </section>
+
+  <section class="stack">
+    <h2>Честные ответы</h2>
+
+    <div class="qa">
+      <h3>Откуда вы взяли, что доход считается по цене продажи?</h3>
+      <p>Из статьи 346.15 НК РФ и писем Минфина от 15.06.2020 № 03-11-11/51060 и от
+        29.01.2021 № 03-11-11/5554: при агентской схеме принципал включает в доход всю сумму,
+        поступившую агенту, независимо от размера удержанного вознаграждения. Проверьте у своего
+        бухгалтера — это первое, что стоит сделать.</p>
+    </div>
+
+    <div class="qa">
+      <h3>Чем это отличается от MPStats и подобных сервисов?</h3>
+      <p>Они смотрят на рынок и конкурентов и стоят от 3 500 ₽ в месяц. «Нетто» смотрит только
+        внутрь вашего отчёта, покупается один раз и не требует доступа к вашему кабинету.
+        Это разные задачи, и одно не заменяет другое.</p>
+    </div>
+
+    <div class="qa">
+      <h3>А если маркетплейс поменяет формат выгрузки?</h3>
+      <p>Колонки сопоставляются вручную прямо в интерфейсе — файл продолжит работать.
+        Плюс обновления входят в цену на 12 месяцев: напишете, что изменилось, — пришлю
+        исправленную версию.</p>
+    </div>
+
+    <div class="qa">
+      <h3>Чего «Нетто» не делает?</h3>
+      <p>Не подключается к API и не ходит в ваш кабинет. Не склеивает несколько отчётов —
+        один файл, один период. Не учитывает расходы вне маркетплейса: аренду, зарплаты,
+        кредиты. Не заменяет бухгалтера: расчёт налоговых сценариев справочный,
+        решение по режиму принимается с профильным специалистом.</p>
+    </div>
+
+    <div class="qa">
+      <h3>Разнесение общих расходов — это точно?</h3>
+      <p>Нет, и я это пишу прямо в интерфейсе. Хранение и приёмка приходят строками без артикула,
+        а маркетплейс не раскрывает, какой товар сколько занял на складе. «Нетто» разносит их
+        пропорционально выручке — это оценка. Разнесение можно выключить.</p>
+    </div>
+  </section>
+
+  <footer class="stack-sm">
+    <p class="src"><b>Нетто</b> — расчёт чистой прибыли по артикулам для селлеров маркетплейсов.
+      Это не налоговая и не юридическая консультация.</p>
+    <p class="src">Структура отчётов взята из справочного центра Wildberries
+      «Детализация еженедельного отчёта реализации» и схем Ozon Seller API.
+      Разбор таблиц — SheetJS (Apache-2.0). Шрифты Bitter, Golos Text, JetBrains Mono (SIL OFL 1.1).</p>
+  </footer>
+
+</div>
+</body>
+</html>
