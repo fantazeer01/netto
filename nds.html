@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор порога НДС для селлеров маркетплейсов — 20 млн ₽ в 2026 году</title>
+<meta name="description" content="Бесплатный калькулятор: считает налоговый доход селлера по агентской схеме, показывает, где вы относительно порога НДС 20 млн ₽ и когда его перейдёте. Без регистрации и без почты.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --paper:#F4F5F7; --surface:#FFFFFF; --surface-2:#EDEFF3;
+    --ink:#14161A; --ink-2:#5A616E; --ink-3:#878F9E;
+    --line:#DFE2E8; --line-strong:#C4C9D2;
+    --mark:#F5C542; --mark-soft:rgba(245,197,66,.42);
+    --loss:#B3261E; --gain:#1E6F50;
+    --shadow:0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+    --display:"Bitter",Georgia,"Times New Roman",serif;
+    --body:"Golos Text","Helvetica Neue",Arial,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",Consolas,monospace;
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1014; --surface:#171A20; --surface-2:#1E222A;
+      --ink:#E7E9ED; --ink-2:#9AA2B1; --ink-3:#767E8C;
+      --line:#262B34; --line-strong:#39404C;
+      --mark:#C9A227; --mark-soft:rgba(201,162,39,.30);
+      --loss:#FF8A7A; --gain:#5FD3A3;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1014; --surface:#171A20; --surface-2:#1E222A;
+    --ink:#E7E9ED; --ink-2:#9AA2B1; --ink-3:#767E8C;
+    --line:#262B34; --line-strong:#39404C;
+    --mark:#C9A227; --mark-soft:rgba(201,162,39,.30);
+    --loss:#FF8A7A; --gain:#5FD3A3;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px}
+  section{padding:64px 0; border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h1,h2,h3{font-family:var(--display); font-weight:700; text-wrap:balance; margin:0}
+  h1{font-size:clamp(2.1rem,5.2vw,3.4rem); line-height:1.08; letter-spacing:-.015em}
+  h2{font-size:clamp(1.5rem,3.2vw,2.05rem); line-height:1.18; letter-spacing:-.01em}
+  h3{font-size:1.08rem; font-weight:500}
+  p{margin:0; max-width:var(--measure)}
+  .stack{display:flex; flex-direction:column; gap:20px}
+  .stack-sm{display:flex; flex-direction:column; gap:12px}
+  .eyebrow{
+    font-family:var(--mono); font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .lead{font-size:1.16rem; color:var(--ink-2)}
+  .mark{background:linear-gradient(to bottom,transparent 58%,var(--mark-soft) 58%); padding:0 .1em}
+  .num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .loss{color:var(--loss)} .gain{color:var(--gain)}
+  a{color:inherit}
+
+  /* header */
+  .masthead{padding:36px 0 8px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+  .logo{font-family:var(--display); font-weight:700; font-size:1.3rem; letter-spacing:-.02em}
+  .badge{
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
+    border:1px solid var(--line-strong); border-radius:2px; padding:3px 8px; color:var(--ink-2);
+  }
+
+  /* hero report */
+  .report{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .report-head{
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:12px 18px; border-bottom:1px solid var(--line); background:var(--surface-2);
+    font-family:var(--mono); font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2);
+  }
+  .scroller{overflow-x:auto}
+  table{border-collapse:collapse; width:100%; min-width:620px; font-size:.92rem}
+  th,td{padding:11px 18px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{
+    font-family:var(--mono); font-weight:600; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  tbody td{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  tbody td:first-child{font-family:var(--body)}
+  tbody tr:last-child td{border-bottom:0}
+  .row-loss td:first-child::before{
+    content:""; display:inline-block; width:3px; height:1em; background:var(--loss);
+    margin-right:9px; vertical-align:-.13em; border-radius:1px;
+  }
+  .report-foot{
+    padding:12px 18px; border-top:1px solid var(--line-strong); background:var(--surface-2);
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:.82rem;
+  }
+  .fade{opacity:0; animation:in .5s ease forwards}
+  @keyframes in{to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none; opacity:1}}
+
+  /* generic blocks */
+  .cols{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px}
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    padding:22px; box-shadow:var(--shadow);
+  }
+  .card p{color:var(--ink-2); font-size:.95rem}
+  .rule-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+  .rule-list li{
+    display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:baseline;
+    padding:14px 0; border-bottom:1px solid var(--line); max-width:var(--measure);
+  }
+  .rule-list li:last-child{border-bottom:0}
+  .rule-list b{font-family:var(--mono); font-size:.8rem; color:var(--ink-3); font-weight:600}
+
+  /* pricing */
+  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; align-items:start}
+  .plan{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px;
+    padding:24px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--shadow);
+  }
+  .plan.featured{border-color:var(--mark); border-width:2px}
+  .plan .price{font-family:var(--display); font-size:1.9rem; font-weight:700; letter-spacing:-.02em}
+  .plan ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; font-size:.93rem; color:var(--ink-2)}
+  .plan li{display:grid; grid-template-columns:14px 1fr; gap:10px}
+  .plan li::before{content:"—"; color:var(--ink-3); font-family:var(--mono)}
+  .btn{
+    display:block; text-align:center; text-decoration:none; font-weight:600; font-size:.95rem;
+    padding:12px 18px; border-radius:3px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover{opacity:.88} .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+  a:focus-visible,.btn:focus-visible{outline:2px solid var(--mark); outline-offset:3px}
+
+  details{border-bottom:1px solid var(--line); padding:16px 0; max-width:var(--measure)}
+  details summary{cursor:pointer; font-weight:500; list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+ "; font-family:var(--mono); color:var(--ink-3)}
+  details[open] summary::before{content:"– "}
+  details p{margin-top:10px; color:var(--ink-2); font-size:.95rem}
+
+  .note{
+    font-size:.86rem; color:var(--ink-3); max-width:var(--measure);
+    border-left:2px solid var(--line-strong); padding-left:14px;
+  }
+  .contact{font-family:var(--mono); font-size:1.15rem}
+  .contact a{text-decoration:none; background:linear-gradient(to bottom,transparent 58%,var(--mark-soft) 58%); padding:2px .15em}
+  .contact a:hover{background:var(--mark-soft)}
+  footer{padding:40px 0 64px; border-top:1px solid var(--line); color:var(--ink-3); font-size:.86rem}
+  footer p{max-width:var(--measure)}
+
+
+  .gap-tab{width:100%;min-width:400px;border-collapse:collapse;font-family:var(--mono);font-size:.92rem;margin:18px 0 6px}
+  .gap-tab td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  .gap-tab td:first-child{text-align:left;font-family:var(--body);color:var(--ink-2)}
+  .gap-tab tr:last-child td{border-bottom:0;font-weight:600}
+  .gap-tab .hi{color:var(--loss);font-weight:600}
+  .beta{border:1px solid var(--line-strong);border-left:3px solid var(--mark);border-radius:4px;background:var(--surface);padding:18px 20px;margin:22px 0}
+  .beta b{color:var(--ink)}
+  .qa{border-top:1px solid var(--line);padding:18px 0}
+  .qa h3{font-family:var(--display);font-size:1rem;margin:0 0 6px}
+  .qa p{color:var(--ink-2);font-size:.94rem;max-width:var(--measure)}
+  .src{font-size:.82rem;color:var(--ink-3)}
+  .src a{color:inherit}
+  @media (min-width:780px){ #how .cols{grid-template-columns:repeat(2,1fr)} }
+</style>
+<style>
+  .calc{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:26px;box-shadow:var(--shadow);margin:26px 0}
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+  .fields label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--ink-2)}
+  .fields input,.fields select{font-family:var(--mono);font-size:1rem;padding:11px 12px;border-radius:3px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);width:100%}
+  .fields .sub{font-size:.76rem;color:var(--ink-3);font-family:var(--body)}
+  .verdict{margin-top:24px;padding:22px;border-radius:4px;border:1px solid var(--line);border-left:3px solid var(--mark);background:var(--paper)}
+  .verdict.alarm{border-left-color:var(--loss)}
+  .verdict.calm{border-left-color:var(--gain)}
+  .verdict h3{font-family:var(--display);font-size:1.1rem;margin:0 0 10px}
+  .big{font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:block;margin:4px 0 10px}
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:16px 0 6px}
+  .split div span{display:block;font-size:.76rem;color:var(--ink-3)}
+  .split div b{font-family:var(--mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
+  .bar{height:14px;border-radius:7px;background:var(--surface-2);overflow:hidden;margin:14px 0 6px;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:var(--mark)}
+  .bar i.over{background:var(--loss)}
+  .scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;color:var(--ink-3)}
+  table.rates{width:100%;min-width:420px;border-collapse:collapse;font-size:.9rem;margin-top:8px}
+  table.rates th,table.rates td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right}
+  table.rates th:first-child,table.rates td:first-child{text-align:left}
+  table.rates thead th{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+  table.rates td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  table.rates tr.best td{background:var(--mark-soft)}
+  table.rates tr.off td{opacity:.45}
+  .qa{border-top:1px solid var(--line);padding:18px 0}
+  .qa h3{font-family:var(--display);font-size:1rem;margin:0 0 6px}
+  .qa p{color:var(--ink-2);font-size:.94rem;max-width:var(--measure)}
+  .src{font-size:.82rem;color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="logo">Нетто</span>
+    <span class="badge">бесплатный калькулятор</span>
+  </header>
+
+  <section class="stack">
+    <p class="eyebrow">УСН · маркетплейсы · 2026</p>
+    <h1>Где вы относительно <span class="mark">порога НДС</span> в 20 млн ₽</h1>
+    <p class="lead">Считает по агентской схеме: доходом признаётся вся сумма, которую заплатил
+      покупатель, а не то, что маркетплейс перечислил вам. Разница обычно 20–30%,
+      и порог из-за неё наступает раньше, чем показывает выписка.</p>
+    <p class="lead">Без регистрации, без почты, ничего не сохраняется. Считает прямо в браузере.</p>
+
+    <div class="calc">
+      <div class="fields">
+        <label>Пришло на счёт с начала года, ₽
+          <input type="number" id="payout" min="0" step="10000" value="9000000">
+          <span class="sub">Сумма перечислений от маркетплейса по выпискам</span>
+        </label>
+        <label>Маркетплейс удерживает, %
+          <input type="number" id="take" min="0" max="70" step="0.5" value="25">
+          <span class="sub">Комиссия, логистика, хранение, эквайринг — всё вместе</span>
+        </label>
+        <label>За сколько месяцев
+          <input type="number" id="months" min="1" max="12" step="1" value="6">
+          <span class="sub">Сколько месяцев этого года вы уже отработали</span>
+        </label>
+        <label>Доля закупок с входным НДС
+          <select id="ivat">
+            <option value="0">0% — поставщики без НДС</option>
+            <option value="0.5" selected>50% — часть с НДС</option>
+            <option value="0.8">80% — почти все с НДС</option>
+            <option value="1">100% — все с НДС</option>
+          </select>
+          <span class="sub">Нужно только для сравнения со ставкой 22%</span>
+        </label>
+      </div>
+
+      <div class="verdict" id="verdict"></div>
+
+      <h3 class="sub-h" style="margin-top:26px">Во что обойдётся каждая ставка</h3>
+      <div class="scroller">
+        <table class="rates"><thead><tr>
+          <th scope="col">Режим</th><th scope="col">Налог за год</th>
+          <th scope="col">Эффективно</th><th scope="col">Доступен</th>
+        </tr></thead><tbody id="rates"></tbody></table>
+      </div>
+      <p class="note" id="ratenote"></p>
+    </div>
+
+    <p class="note"><b>Это калькулятор, а не налоговая консультация.</b> Ставку выбирают
+      один раз и применяют 12 кварталов подряд — решение принимайте с бухгалтером.</p>
+  </section>
+
+  <section class="stack">
+    <h2>Почему выписка и налоговая база — разные числа</h2>
+    <p class="lead">Wildberries, Ozon и Яндекс Маркет работают по агентской схеме. Покупатель
+      платит площадке, площадка удерживает своё и перечисляет остаток вам.</p>
+    <p class="lead">Для УСН доходом признаётся вся сумма от покупателя. Комиссия площадки —
+      это ваш расход, а не уменьшение дохода.</p>
+    <p class="lead">Ст. 346.15 НК РФ отсылает к ст. 248 и 249, а ст. 251 не позволяет уменьшать
+      доход на удержанное агентом вознаграждение. Применительно к маркетплейсам это
+      подтверждено письмом Минфина от 16.10.2024 № 03-11-11/100521.</p>
+
+    <div class="qa">
+      <h3>Порог снижается каждый год</h3>
+      <p>20 млн ₽ в 2026 году, 15 млн ₽ в 2027-м, 10 млн ₽ с 2028-го. Порог считается
+        по доходу за предыдущий год. Если превысили внутри года — НДС возникает
+        с 1-го числа следующего месяца, не со следующего квартала и не со следующего года.</p>
+    </div>
+
+    <div class="qa">
+      <h3>А на какую дату признаётся доход?</h3>
+      <p>Здесь единой практики нет. Минфин в письме от 15.01.2025 № 03-11-11/1996 пишет
+        про «дату возникновения права у принципала распоряжаться полученными доходами».
+        Формулировка обтекаемая: одни считают доход на дату получения денег маркетплейсом,
+        другие — на дату поступления на счёт продавца. На стыке года это решает, попадёте
+        вы под НДС в этом году или в следующем.</p>
+    </div>
+
+    <div class="qa">
+      <h3>Насколько точен этот расчёт</h3>
+      <p>Он приблизительный: доля удержаний берётся средняя, а она у разных товаров разная,
+        и прогноз линейный — сезонность он не учитывает. Для «попадаю или нет» этого хватает.
+        Для точной цифры нужен отчёт о реализации, где видна фактическая цена продажи
+        по каждой строке.</p>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Если нужна точная цифра</h2>
+    <p class="lead">Я собрал файл, который считает то же самое по выгрузке из личного кабинета,
+      без усреднений: разрыв между налоговым доходом и выплатами по факту, прибыль по
+      каждому артикулу со всеми удержаниями и дату перехода порога по помесячной динамике.</p>
+    <p class="lead">Открывается в браузере двойным кликом, работает офлайн, данные никуда
+      не отправляются. Сейчас бета — отдаю бесплатно тем, кто пришлёт обезличенный отчёт
+      для сверки.</p>
+    <p><a class="btn" href="./">Посмотреть «Нетто»</a></p>
+  </section>
+
+  <footer class="stack-sm">
+    <p class="src">Калькулятор считает у вас в браузере. Введённые числа никуда не отправляются
+      и нигде не сохраняются — обновите страницу, и они исчезнут.</p>
+    <p class="src">Это не налоговая и не юридическая консультация. Правила проверены
+      22 августа 2026 года.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var money = function (n) { return Math.round(n).toLocaleString("ru-RU") + " ₽"; };
+  // предложный падеж — «в ноябре», и родительный — «с августа»
+  var IN = ["январе","феврале","марте","апреле","мае","июне",
+            "июле","августе","сентябре","октябре","ноябре","декабре"];
+  var FROM = ["января","февраля","марта","апреля","мая","июня",
+              "июля","августа","сентября","октября","ноября","декабря"];
+  var T = 20000000;
+  var TIERS = [
+    { rate: 0.05, upTo: 272500000, ded: false, label: "5% без вычетов" },
+    { rate: 0.07, upTo: 490500000, ded: false, label: "7% без вычетов" },
+    { rate: 0.22, upTo: 490500000, ded: true,  label: "22% с вычетами" }
+  ];
+
+  function calc() {
+    var payout = Math.max(0, +$("payout").value || 0);
+    var take = Math.min(Math.max(+$("take").value || 0, 0), 70) / 100;
+    var months = Math.min(Math.max(+$("months").value || 1, 1), 12);
+    var share = +$("ivat").value;
+
+    var income = take < 1 ? payout / (1 - take) : payout;
+    var gap = income - payout;
+    var perMonth = income / months;
+    var yearRate = perMonth * 12;
+    var pct = T > 0 ? (income / T) * 100 : 0;
+
+    var v = $("verdict");
+    var head, body;
+
+    if (income >= T) {
+      v.className = "verdict alarm";
+      var over = income - T;
+      var crossedAt = Math.ceil(T / perMonth);
+      crossedAt = Math.min(Math.max(crossedAt, 1), 12);
+      var vatFrom = crossedAt < 12 ? FROM[crossedAt] : "января следующего года";
+      head = "Порог 20 млн ₽ уже перейден";
+      body = "<span class='big'>" + money(income) + "</span>" +
+        "<p>Превышение — <b>" + money(over) + "</b>. При равномерном темпе порог был пройден " +
+        "примерно в <b>" + IN[crossedAt - 1] + "</b>, значит обязанность по НДС наступает " +
+        "с 1-го числа следующего месяца — с <b>" + vatFrom + "</b>.</p>" +
+        "<p>Проверьте это по фактическим месячным данным: если продажи неравномерные, " +
+        "дата сдвинется.</p>";
+    } else {
+      var left = T - income;
+      var monthsLeft = perMonth > 0 ? left / perMonth : Infinity;
+      if (monthsLeft <= 12 - months) {
+        v.className = "verdict";
+        var idx = Math.min(Math.floor(months + monthsLeft), 11);
+        head = "До порога осталось " + money(left);
+        body = "<p>При текущем темпе вы пройдёте 20 млн примерно через <b>" +
+          monthsLeft.toFixed(1) + " мес.</b> — примерно в <b>" + IN[idx] + "</b> этого года. " +
+          "НДС тогда возникнет с 1-го числа следующего месяца.</p>";
+      } else {
+        v.className = "verdict calm";
+        head = "В этом году порог вы не перейдёте";
+        body = "<p>При текущем темпе годовой доход составит около <b>" + money(yearRate) +
+          "</b> — это ниже 20 млн ₽.</p>" +
+          "<p>Но помните: в 2027 году порог опускается до 15 млн ₽, а с 2028-го до 10 млн ₽. " +
+          "При таком темпе вы попадёте под НДС " +
+          (yearRate >= 15000000 ? "уже в 2027 году" :
+           yearRate >= 10000000 ? "в 2028 году" : "не раньше 2028 года") + ".</p>";
+      }
+    }
+
+    v.innerHTML = "<h3>" + head + "</h3>" + body +
+      "<div class='split'>" +
+        "<div><span>Пришло на счёт</span><b>" + money(payout) + "</b></div>" +
+        "<div><span>Заплатили покупатели</span><b>" + money(income) + "</b></div>" +
+        "<div><span>Разрыв</span><b class='loss'>" + money(gap) + "</b></div>" +
+        "<div><span>Годовой темп</span><b>" + money(yearRate) + "</b></div>" +
+      "</div>" +
+      "<div class='bar'><i class='" + (pct >= 100 ? "over" : "") +
+        "' style='width:" + Math.min(pct, 100).toFixed(1) + "%'></i></div>" +
+      "<div class='scale'><span>0</span><span>" + pct.toFixed(0) +
+        "% порога</span><span>20 млн ₽</span></div>";
+
+    // ставки
+    var base = yearRate;
+    var rows = [];
+    var exempt = income < T;
+    rows.push("<tr class='" + (exempt ? "best" : "off") + "'><td><b>Освобождение</b></td>" +
+      "<td>0 ₽</td><td>0,00%</td><td>" + (exempt ? "да" : "нет, порог перейден") + "</td></tr>");
+    TIERS.forEach(function (t) {
+      var vat = base * t.rate / (1 + t.rate);
+      var ded = 0;
+      if (t.ded) ded = base * 0.55 * share * t.rate / (1 + t.rate);
+      var net = vat - ded;
+      var avail = base <= t.upTo;
+      var best = !exempt && t.rate === bestRate(base, share);
+      rows.push("<tr class='" + (!avail ? "off" : (best ? "best" : "")) + "'>" +
+        "<td><b>" + t.label + "</b>" + (best ? " <span class='sub gain'>выгоднее</span>" : "") + "</td>" +
+        "<td>" + money(net) + "</td>" +
+        "<td>" + (base > 0 ? (net / base * 100).toFixed(2) : "0,00") + "%</td>" +
+        "<td>" + (avail ? "да" : "нет, по лимиту дохода") + "</td></tr>");
+    });
+    $("rates").innerHTML = rows.join("");
+    $("ratenote").innerHTML = exempt
+      ? "Пока доход ниже порога, платить НДС не нужно. Таблица показывает, во что обойдётся каждая ставка, если темп сохранится."
+      : "Вычет при ставке 22% посчитан грубо: принято, что около 55% выручки приходится на закупки и услуги, из них с входным НДС — " +
+        Math.round(share * 100) + "%. Точную сумму даст только книга покупок.";
+  }
+
+  function bestRate(base, share) {
+    var best = null, bestNet = Infinity;
+    TIERS.forEach(function (t) {
+      if (base > t.upTo) return;
+      var vat = base * t.rate / (1 + t.rate);
+      var ded = t.ded ? base * 0.55 * share * t.rate / (1 + t.rate) : 0;
+      if (vat - ded < bestNet) { bestNet = vat - ded; best = t.rate; }
+    });
+    return best;
+  }
+
+  ["payout", "take", "months", "ivat"].forEach(function (id) {
+    $(id).addEventListener("input", calc);
+    $(id).addEventListener("change", calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>
